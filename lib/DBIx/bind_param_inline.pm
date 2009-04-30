@@ -3,7 +3,7 @@ package DBIx::bind_param_inline;
 use 5.008008;
 use warnings;
 
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 
 use Carp;
 
@@ -54,8 +54,9 @@ sub execute{
     };
     my $pnum = 1;
     while (@obj){
-        $sth->bind_param($pnum, ${shift @obj});
+        $sth->bind_param($pnum++, ${shift @obj});
     };
+    $sth->execute;
 
 };
 
@@ -63,6 +64,7 @@ our $AUTOLOAD;
 
 sub AUTOLOAD{
     my $name = $AUTOLOAD;
+    # uncomment the next line to see memoized autoloading in action
     # warn "AUTOLOADING $name";
     $name =~ s/.*://;   # strip fully-qualified portion
     eval 'sub '.$name.'{
@@ -73,6 +75,12 @@ sub AUTOLOAD{
 
     goto &$name
 }
+
+sub DESTROY{
+    # autoloading this is poor form, considering it
+    # is conceivable that we might have other references to the $sth
+    @{$_[0]} = ();
+};
 
 1;
 __END__
@@ -100,7 +108,7 @@ Syntactic sugar allowing implied statement parameters, like in SQR.
   ...
   $sth->execute(); #placeholders get bound for you
   $sth2->execute($something->compute_baz); # regular placeholders still work!
-  ...
+  
 
 =head1 DESCRIPTION
 
@@ -110,6 +118,13 @@ resulting statement handle has some additional information in it
 so bind_param will be called when it is executed, and all other
 methods called on it fall through to the non-extended statement handle.
 
+The important thing is, you get to name your variables directly within
+your SQL, which means less counting question marks and more freedom
+to change the order of things.
+
+So we get to trade the tricky action-at-a-distance problem of placeholder order
+for the more manageable action-at-a-distance problem of package variables.
+
 =head2 EXPORT
 
 C<prepare_inline>
@@ -118,11 +133,17 @@ C<prepare_inline>
 
 =over 8
 
-=item 0.01
+=item 0.03  2009 April 29
+
+Changed from NullP to SQLite for testing purposes, actually creating a table and
+accessing it with this new syntax.  This tool actually works now.
 
 
 =back
 
+=head2 BUGS
+
+Doesn't work with lexical C<my> variables.  I believe this could be repaired by walking the pad instead of or in addition to looking at C<caller()."::$name">.  Patches welcome. 
 
 
 =head1 SEE ALSO
@@ -137,6 +158,8 @@ David Nicol E<lt>davidnico@cpan.org<gt>
 
 Copyright (C) 2008 by David Nicol
 
-This library is released into the public domain.
+your choice of GPL 2, GPL 3, or AL.  Did I actually reserve any rights for myself?
+Yes, I did.  You're not allowed to lie and say you wrote it.
+
 
 =cut

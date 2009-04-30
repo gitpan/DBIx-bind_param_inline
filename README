@@ -1,4 +1,4 @@
-DBIx-bind_param_inline version 0.01
+DBIx-bind_param_inline version 0.03
 ===================================
 
 Syntactic sugar that implies bind_param calls, so that one
@@ -19,6 +19,7 @@ DEPENDENCIES
 This module requires these other modules and libraries:
 
   DBI
+  DBD::SQLite is used in the testing
 
 COPYRIGHT AND LICENCE
 
